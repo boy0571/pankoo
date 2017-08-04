@@ -1,0 +1,96 @@
+require(data.table)
+require(curl)
+library(RCurl)
+library(caret)
+library(lubridate)
+library(xgboost)
+library(randomForest)
+library(glmnet)
+library(rpart)
+library(tree)
+
+
+
+
+
+
+
+
+
+
+test<-vector()
+
+for ( i in 1:(nrow(pa_month_nosales))){
+  here_data<-pa_month_nosales[i,]
+  here_date<-here_data$start_date
+  before_data<-pa_month_nosales[pa_month_nosales$start_date<=(here_date-30),]
+  here_target<-mean(before_data$target_28)
+  test[i]<-abs((here_target-here_data$target_28)/here_data$target_28)
+}
+pa_month_nosales$ratio<-(pa_month_nosales$target_28_sum-pa_month_nosales$target_7_sum)/21/pa_month_nosales$target_7
+
+train_col<-c('lunch','holiday','temp','meat_ratio','last_month_Mean','last_month_SDev','CAT_Sum',"PRICE_RATIO_Sum" ,  "PRICE_PACKAGE_Max", "DISCOUNT","holiday_28"    ,    "comp_28"     ,      "temp_mean_2week")
+
+test<-pa_month_nosales[pa_month_nosales$ratio<5,]  ##9 eliminated
+test_data<-test[,train_col]
+test_label<-test$ratio
+
+
+
+
+xgb_trcontrol_test = trainControl(
+method = "cv",
+number = 5,
+verboseIter = TRUE,
+returnData = FALSE,
+returnResamp = "all",  
+allowParallel = TRUE
+)
+
+newpara<-expand.grid( 
+eta = c(0.1,0.05,0.025),
+max_depth = c(4,6,8),
+nrounds = c(50,100,200),
+gamma = c(0,0.1,0.5,1),  #default=0
+colsample_bytree = 1, #default=1
+min_child_weight = 2 , #default=1
+subsample=1
+)   ##parameters combinations
+ 
+
+xgb_train<-train(
+x=test_data,
+y=test_label,
+trControl = xgb_trcontrol_test,
+tuneGrid = newpara,
+method = "xgbTree"
+)
+##best round eta=0.05, gamma=0, max_depth=8, min_child_weight=2, subsample=1, colsample_bytree=1
+
+xgb.importance(train_col,tempmodel)
+
+##Feature     gain          cover        frequency
+##DISCOUNT	2.616665e-01	0.2546760481	0.200341006	
+##temp_mean_2week	2.438104e-01	0.0874230431	0.091219096	
+##temp	2.313162e-01	0.2228085605	0.180733163	
+##holiday_28	8.532234e-02	0.0415127529	0.045183291	
+##CAT_Sum	5.703367e-02	0.0276751686	0.052855925	
+
+
+params <- list(booster = "gbtree", objective = "reg:linear", eta=0.05, gamma=0, max_depth=8, min_child_weight=2, subsample=1, colsample_bytree=1)
+
+
+xgb_tune_round <- xgb.cv( params = params, data = xgmatrix, nrounds = 200, nfold = 5, showsd = T, stratified = T, print.every.n = 1, early.stop.round = 10, maximize = F)
+##best at 67
+
+mape<-vector()
+for (i in 1:83){
+  data<-test_data[-i,]
+  label<-test_label[-i]
+  tempmodel<-xgboost(data=as.matrix(data),label=label,params=params,nrounds = 67,verbose = F)
+  mape[i]<-abs(predict(tempmodel,as.matrix(test_data[i,]))/test_label[i]-1)
+}
+
+mean(mape[mape])###0.3    
+mean(mape[mape<5])##0.21   1 eliminated 8.xxx 
+mean(mape[mape<1])###0.19    1 eliminated 2.4xxxx
