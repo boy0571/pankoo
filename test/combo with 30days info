@@ -35,8 +35,6 @@ aggregate(small$FROMTIME,by=list(small$ITEMCODE),max)
 
 unique(small$ITEMCODE)
 
-small
-
 unique(out$ITEM_CODE)
 
 pa_fromtime_totime_bizdate$FROMTIME_Min<-as.numeric(pa_fromtime_totime_bizdate$FROMTIME_Min)
@@ -76,8 +74,6 @@ for ( i in (1:length(unique(normalcombo_data$ITEMCODE)))){
   by_item_normalcombo[[i]]<-normalcombo_data[which(normalcombo_data$ITEMCODE==unique(normalcombo_data$ITEMCODE)[i]),]
 by_item_normalcombo[[i]]<-by_item_normalcombo[[i]][order(by_item_normalcombo[[i]]$BIZDATE),]
 }
-
-by_item_normalcombo
 
 by_item_wushi[[1]]
 
@@ -138,25 +134,15 @@ for( i in 1:length(by_item_normalcombo)){
   ready_data_normalcombo<-rbind(ready_data_normalcombo,by_item_normalcombo[[i]])
 }
 
-by_item_normalcombo[[32]]
-
 aggregate(wushi_data$BIZDATE,by=list(wushi_data$ITEMCODE),max)-aggregate(wushi_data$BIZDATE,by=list(wushi_data$ITEMCODE),min)
 
 plot(ts(by_item_wushi[[15]]$ratio))
-
-mean()
 
 plot(ts(by_item_wushi[[8]]$Count_last28))
 
 plot(ts(by_item_wushi[[8]]$Record_Count))
 
 by_item_wushi[[26]]
-
-mean()
-
-ready_data2
-
-ready_data2
 
 mean(abs(ready_data2$ratio[which((ready_data2$ratio>0)&(ready_data2$ratio<5))]-1))
 
@@ -172,31 +158,13 @@ test<-merge(ready_data2,tomerge,by.x='BIZDATE',by.y = 'BIZDATE',all.y=T)
 
 test2<-merge(ready_data_normalcombo,tomerge,by.x='BIZDATE',by.y = 'BIZDATE',all.y=T)
 
-
 test2<-merge(ready_data_normalcombo,combo_info[,c('start_date','end_date','meat_ratio','DISCOUNT','CAT_Sum','PRICE_PACKAGE_Max','ITEMCODE')],by.x='ITEMCODE',by.y='ITEMCODE',all.y=T)
-
-
 
 test2<-merge(test2,to_merge,by.x = 'BIZDATE',by.y ='BIZDATE')
 
-test2
-
-test2
-  
 combo_info[,c('BIZDATE','start_date','end_date','meat_ratio','DISCOUNT','CAT_Sum','PRICE_PACKAGE_Max','ITEMCODE')]  
 
-
-test2
-
-ready_data2
-
-test
-
 tomerge<-date_info[,c('BIZDATE','holiday_28','holiday_month','temp_mean_2week','temp_mean_month')]
-
-tomerge
-
-date_info
 
 unique(ready_data2$BIZDATE)
 
@@ -208,8 +176,6 @@ test2<-test2[which(test2$ratio<5&test2$ratio>0.5),]
 
 mean(abs(test2$ratio-1))
 
-test2$ratio
-
 nrow(test[which(test$BIZDATE>as.Date('2017-04-01')),])
 
 test_train<-test[which(test$BIZDATE<as.Date('2017-03-01')),]
@@ -220,13 +186,11 @@ test_train2<-test2[which(test2$BIZDATE<as.Date('2017-03-01')),]
 
 test_test2<-test2[which(test2$BIZDATE>as.Date('2017-04-01')),]
 
-
 traincol<-c('Record_Count','Count_last28','holiday_28','holiday_month','temp_mean_2week','temp_mean_month','last_2week_ratio','last_1week_ratio')
 
 xgtrain<-test_train[,names(test_train)%in%traincol]
 
 xgtrain_label<-test_train[,'ratio']
-
 
 xgtrain2<-test_train2[,names(test_train2)%in%traincol]
 
@@ -242,18 +206,15 @@ params<-list(booster = "gbtree", objective = "reg:linear", eta=0.02, gamma=0.1, 
 )
 
 tempmo2<-xgboost(data=as.matrix(xgtrain),label=xgtrain_label,nrounds = 400,params = params,print_every_n = 10)
+
 unique(test_test$ITEMCODE)
 
 mean(abs(predict(tempmo2,as.matrix(xgtest))-test_test$ratio))
 
 mean(abs(predict(tempmo,test_test)-test_test$ratio))
 
-
 params_normalcombo<-list(booster = "gbtree", objective = "reg:linear", eta=0.05, gamma=2, max_depth=6, min_child_weight=5, subsample=0.7, colsample_bytree=0.7
 )
 tempmo_normalcom<-xgboost(data=as.matrix(xgtrain2),label=xgtrain_label2,nrounds = 100,params = params_normalcombo,print_every_n = 10)
-
-
-
 
 mean(abs(predict(tempmo_normalcom,as.matrix(xgtest2))-test_test2$ratio))
