@@ -23,7 +23,8 @@ test<-vector()
 for ( i in 1:(nrow(pa_month_nosales))){
   here_data<-pa_month_nosales[i,]
   here_date<-here_data$start_date
-  before_data<-pa_month_nosales[pa_month_nosales$start_date<=(here_date-30),]
+
+before_data<-pa_month_nosales[pa_month_nosales$start_date<=(here_date-30),]
   here_target<-mean(before_data$target_28)
   test[i]<-abs((here_target-here_data$target_28)/here_data$target_28)
 }
@@ -91,6 +92,26 @@ for (i in 1:83){
   mape[i]<-abs(predict(tempmodel,as.matrix(test_data[i,]))/test_label[i]-1)
 }
 
+##test RF
+
+mape2<-vector()
+for (i in 1:83){
+  data<-test_data[-i,]
+  label<-test_label[-i]
+  tempdata<-cbind(label,data)
+  tempmodel<-randomForest(label~.,data=tempdata)
+  mape2[i]<-abs(predict(tempmodel,test_data[i]))/test_label[i]-1)
+}
+
+
+
+
+
 mean(mape[mape])###0.3    
 mean(mape[mape<5])##0.21   1 eliminated 8.xxx 
 mean(mape[mape<1])###0.19    1 eliminated 2.4xxxx
+mean(mape2)###0.48?? 
+mean(mape2[mape2<5])##0.27   1 eliminated 8.xxx 
+mean(mape2[mape2<1])###0.25    1 eliminated 2.4xxxx
+
+
