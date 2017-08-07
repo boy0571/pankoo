@@ -68,7 +68,7 @@ method = "xgbTree"
 )
 ##best round eta=0.05, gamma=0, max_depth=8, min_child_weight=2, subsample=1, colsample_bytree=1
 
-xgb.importance(train_col,tempmodel)
+
 
 ##Feature     gain          cover        frequency
 ##DISCOUNT	2.616665e-01	0.2546760481	0.200341006	
@@ -78,8 +78,7 @@ xgb.importance(train_col,tempmodel)
 ##CAT_Sum	5.703367e-02	0.0276751686	0.052855925	
 
 
-params <- list(booster = "gbtree", objective = "reg:linear", eta=0.05, gamma=0, max_depth=8, min_child_weight=2, subsample=1, colsample_bytree=1)
-
+params <- xgb_train$best_tune
 
 xgb_tune_round <- xgb.cv( params = params, data = xgmatrix, nrounds = 200, nfold = 5, showsd = T, stratified = T, print.every.n = 1, early.stop.round = 10, maximize = F)
 ##best at 67
@@ -91,7 +90,7 @@ for (i in 1:83){
   tempmodel<-xgboost(data=as.matrix(data),label=label,params=params,nrounds = 67,verbose = F)
   mape[i]<-abs(predict(tempmodel,as.matrix(test_data[i,]))/test_label[i]-1)
 }
-
+xgb.importance(train_col,tempmodel)
 ##test RF
 
 mape2<-vector()
